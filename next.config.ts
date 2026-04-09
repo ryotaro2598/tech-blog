@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  cacheComponents: true, // Next.js 16の設定でコンポーネントをキャッシュするための設定
 };
 
 export default nextConfig;
