@@ -12,6 +12,7 @@ export type MicrocmsContent = {
   eyecatch: {
     url: string;
   };
+  content: string;
 };
 
 export type MicrocmsResponse = {
