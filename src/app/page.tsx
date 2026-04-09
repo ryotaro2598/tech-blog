@@ -24,21 +24,47 @@ function CardSkeleton() {
 }
 
 async function QiitaArticles() {
-  const response = await axios.get<QiitaResponse[]>(
-    "https://qiita.com/api/v2/items?query=user:Sicut_study&per_page=4",
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.QIITA_API_KEY}`,
-      },
-    }
-  );
+  const token = process.env.QIITA_API_KEY;
+  if (!token) {
+    return (
+      <div className="rounded-xl border border-card-border bg-card p-5">
+        <p className="text-sm text-foreground">
+          Qiita記事の取得設定が見つかりません。
+        </p>
+        <p className="mt-1 text-xs text-muted">QIITA_API_KEY is not set</p>
+      </div>
+    );
+  }
 
-  const items = response.data.map((item) => ({
-    id: item.id,
-    title: item.title,
-    url: item.url,
-    image: "https://qiita-user-contents.imgix.net/https%3A%2F%2Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%2F0%2F810513%2F04c6ef92-7b08-467f-95b0-efd05a0e7ea4.png?ixlib=rb-4.0.0&auto=format&gif-q=60&q=75&w=1400&fit=max&s=255a4084e07534dc5871b77aa1318d0e",
-  }));
+  let items: { id: string; title: string; url: string; image: string }[] = [];
+  try {
+    const response = await axios.get<QiitaResponse[]>(
+      "https://qiita.com/api/v2/items?query=user:Sicut_study&per_page=4",
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        timeout: 8000,
+      }
+    );
+
+    items = (response.data ?? []).map((item) => ({
+      id: item.id,
+      title: item.title,
+      url: item.url,
+      image:
+        "https://qiita-user-contents.imgix.net/https%3A%2F%2Fqiita-image-store.s3.ap-northeast-1.amazonaws.com%2F0%2F810513%2F04c6ef92-7b08-467f-95b0-efd05a0e7ea4.png?ixlib=rb-4.0.0&auto=format&gif-q=60&q=75&w=1400&fit=max&s=255a4084e07534dc5871b77aa1318d0e",
+    }));
+  } catch {
+    return (
+      <div className="rounded-xl border border-card-border bg-card p-5">
+        <p className="text-sm text-foreground">Qiita記事の取得に失敗しました。</p>
+        <p className="mt-1 text-xs text-muted">
+          一時的な障害の可能性があります。
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -73,21 +99,46 @@ async function QiitaArticles() {
 }
 
 async function MicrocmsArticles() {
-  const response = await axios.get<MicrocmsResponse>(
-    "https://9bftk8xb72.microcms.io/api/v1/blogs",
-    {
-      headers: {
-        "X-MICROCMS-API-KEY": `${process.env.MICROCMS_API_KEY}`,
-      },
-    }
-  );
+  const apiKey = process.env.MICROCMS_API_KEY;
+  if (!apiKey) {
+    return (
+      <div className="rounded-xl border border-card-border bg-card p-5">
+        <p className="text-sm text-foreground">
+          ブログ記事の取得設定が見つかりません。
+        </p>
+        <p className="mt-1 text-xs text-muted">MICROCMS_API_KEY is not set</p>
+      </div>
+    );
+  }
 
-  const items = response.data.contents.map((item) => ({
-    id: item.id,
-    title: item.title,
-    url: `/blogs/${item.id}`,
-    image: item.eyecatch.url,
-  }));
+  let items: { id: string; title: string; url: string; image: string }[] = [];
+  try {
+    const response = await axios.get<MicrocmsResponse>(
+      "https://9bftk8xb72.microcms.io/api/v1/blogs",
+      {
+        headers: {
+          "X-MICROCMS-API-KEY": apiKey,
+        },
+        timeout: 8000,
+      }
+    );
+
+    items = (response.data?.contents ?? []).map((item) => ({
+      id: item.id,
+      title: item.title,
+      url: `/blogs/${item.id}`,
+      image: item.eyecatch.url,
+    }));
+  } catch {
+    return (
+      <div className="rounded-xl border border-card-border bg-card p-5">
+        <p className="text-sm text-foreground">ブログ記事の取得に失敗しました。</p>
+        <p className="mt-1 text-xs text-muted">
+          一時的な障害の可能性があります。
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">

@@ -7,20 +7,47 @@ import { useEffect, useState } from "react";
 export default function Qiita() {
   const [qiitaItems, setQiitaItems] = useState<QiitaResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const fetchQiitaItems = async () => {
-    const response = await axios.get<QiitaResponse[]>("/api/qiita/items");
-    return response.data;
+    const response = await axios.get<QiitaResponse[]>("/api/qiita/items", {
+      timeout: 8000,
+    });
+    return response.data ?? [];
   };
 
   useEffect(() => {
+    let cancelled = false;
+
+    setIsLoading(true);
+    setErrorMessage(null);
+
     fetchQiitaItems()
       .then((items) => {
+        if (cancelled) return;
         setQiitaItems(items);
       })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        if (axios.isAxiosError(err)) {
+          const status = err.response?.status;
+          if (status === 429) {
+            setErrorMessage(
+              "現在アクセスが集中しています。しばらくしてから再試行してください。"
+            );
+            return;
+          }
+        }
+        setErrorMessage("Qiitaの記事一覧の取得に失敗しました。");
+      })
       .finally(() => {
+        if (cancelled) return;
         setIsLoading(false);
       });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -47,8 +74,22 @@ export default function Qiita() {
         </div>
       )}
 
+      {/* Error State */}
+      {!isLoading && errorMessage && (
+        <div className="rounded-xl border border-card-border bg-card p-5">
+          <p className="text-sm text-foreground">{errorMessage}</p>
+          <button
+            type="button"
+            onClick={() => location.reload()}
+            className="mt-3 rounded-md border border-card-border bg-background px-3 py-1.5 text-sm font-medium text-foreground transition-colors hover:border-qiita-green"
+          >
+            再読み込み
+          </button>
+        </div>
+      )}
+
       {/* Article List */}
-      {!isLoading && (
+      {!isLoading && !errorMessage && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {qiitaItems.map((item) => (
             <a

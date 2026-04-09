@@ -1,29 +1,42 @@
 'use cache';
 
 import { MicrocmsResponse } from "../../../domain/Article";
-import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 
+type BlogCard = {
+  id: string;
+  title: string;
+  url: string;
+  image: string;
+};
+
+async function getBlogs(): Promise<BlogCard[]> {
+  const apiKey = process.env.MICROCMS_API_KEY;
+  if (!apiKey) throw new Error("MICROCMS_API_KEY is not set");
+
+  const res = await fetch("https://9bftk8xb72.microcms.io/api/v1/blogs", {
+    headers: {
+      "X-MICROCMS-API-KEY": apiKey,
+    },
+    cache: "force-cache",
+    signal: AbortSignal.timeout(8000),
+  });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch blogs (status: ${res.status})`);
+  }
+
+  const data = (await res.json()) as MicrocmsResponse;
+  return (data.contents ?? []).map((item) => ({
+    id: item.id,
+    title: item.title,
+    url: `/blogs/${item.id}`,
+    image: item.eyecatch.url,
+  }));
+}
+
 export default async function Blogs() {
-  const getBlogs = async () => {
-    const response = await axios.get<MicrocmsResponse>(
-      "https://9bftk8xb72.microcms.io/api/v1/blogs",
-      {
-        headers: {
-          "X-MICROCMS-API-KEY": `${process.env.MICROCMS_API_KEY}`,
-        },
-      }
-    );
-
-    return response.data.contents.map((item) => ({
-      id: item.id,
-      title: item.title,
-      url: `/blogs/${item.id}`,
-      image: item.eyecatch.url,
-    }));
-  };
-
   const blogs = await getBlogs();
 
   return (

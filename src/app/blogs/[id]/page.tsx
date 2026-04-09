@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
+import { notFound, unstable_rethrow } from "next/navigation";
 import { MicrocmsContent } from "../../../../domain/Article";
 import ReloadButton from "./ReloadButton";
 
@@ -25,16 +26,57 @@ async function BlogContent({ params }: { params: Promise<{ id: string }> }) {
   "use cache";
   const { id } = await params;
 
-  const response = await axios.get<MicrocmsContent>(
-    `https://9bftk8xb72.microcms.io/api/v1/blogs/${id}`,
-    {
-      headers: {
-        "X-MICROCMS-API-KEY": `${process.env.MICROCMS_API_KEY}`,
-      },
-    }
-  );
+  const apiKey = process.env.MICROCMS_API_KEY;
+  if (!apiKey) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-xl border border-card-border bg-card p-5">
+        <p className="text-sm text-foreground">
+          ブログの表示に必要な設定が見つかりません。
+        </p>
+        <p className="mt-1 text-xs text-muted">MICROCMS_API_KEY is not set</p>
+      </div>
+    );
+  }
 
-  const blog = response.data;
+  let blog: MicrocmsContent;
+  try {
+    const response = await axios.get<MicrocmsContent>(
+      `https://9bftk8xb72.microcms.io/api/v1/blogs/${id}`,
+      {
+        headers: {
+          "X-MICROCMS-API-KEY": apiKey,
+        },
+        timeout: 8000,
+      }
+    );
+    blog = response.data;
+  } catch (err: unknown) {
+    unstable_rethrow(err);
+
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      if (status === 404) notFound();
+    }
+
+    return (
+      <div className="mx-auto max-w-3xl rounded-xl border border-card-border bg-card p-5">
+        <p className="text-sm text-foreground">
+          ブログ記事の取得に失敗しました。
+        </p>
+        <p className="mt-1 text-xs text-muted">
+          一時的な障害の可能性があります。時間を置いて再試行してください。
+        </p>
+        <div className="mt-4">
+          <Link
+            href="/blogs"
+            className="text-sm font-medium text-muted transition-colors hover:text-accent"
+          >
+            &larr; ブログ一覧に戻る
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <article className="mx-auto max-w-3xl">
