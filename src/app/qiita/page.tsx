@@ -9,14 +9,7 @@ export default function Qiita() {
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchQiitaItems = async () => {
-    const response = await axios.get<QiitaResponse[]>(
-      "https://qiita.com/api/v2/items?query=user:Sicut_study&per_page=20",
-      {
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_QIITA_API_KEY}`,
-        },
-      }
-    );
+    const response = await axios.get<QiitaResponse[]>("/api/qiita/items");
     return response.data;
   };
 
