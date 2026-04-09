@@ -1,20 +1,20 @@
 // Qiita APIから返ってくるデータの型を定義
 export type QiitaResponse = {
-    id: string;
-    title: string;
+  id: string;
+  title: string;
+  url: string;
+  image: string;
+}
+
+export type MicrocmsContent = {
+  id: string;
+  title: string;
+  eyecatch: {
     url: string;
-    image: string;
-  }
-  
-  export type MicrocmsContent = {
-    id: string;
-    title: string;
-    eyecatch: {
-      url: string;
-    };
   };
-  
-  export type MicrocmsResponse = {
-    contents: MicrocmsContent[];
-  }
+};
+
+export type MicrocmsResponse = {
+  contents: MicrocmsContent[];
+}
   
